@@ -1839,3 +1839,143 @@ socket.on('disconnect', () => {
 
 
 
+
+// ==================== AUTO GEM FRONTEND ====================
+// Gem ID lookup table (matching GEM_DATA in owonew20.js)
+const GEM_IDS = {
+  hunting:    { common:51, uncommon:52, rare:53, epic:54, mythical:55, legendary:56, fabled:57 },
+  empowering: { common:65, uncommon:66, rare:67, epic:68, mythical:69, legendary:70, fabled:71 },
+  lucky:      { common:72, uncommon:73, rare:74, epic:75, mythical:76, legendary:77, fabled:78 },
+};
+const GEM_HUNTS = {
+  hunting:    { common:25, uncommon:25, rare:50, epic:75, mythical:75, legendary:100, fabled:100 },
+  empowering: { common:13, uncommon:25, rare:63, epic:113, mythical:131, legendary:200, fabled:250 },
+  lucky:      { common:13, uncommon:25, rare:63, epic:113, mythical:131, legendary:200, fabled:250 },
+};
+
+let _gemState = { enabled: false, type: 'hunting', rarity: 'common', hunts_done: 0, durability: 25 };
+
+// ── Receive gem updates ──
+socket.on('gem_update', (data) => {
+  _gemState = data;
+  renderGemPanel(data);
+});
+
+// ── Render gem panel ──
+function renderGemPanel(g) {
+  if (!g) return;
+
+  // Status chip
+  const chip = document.getElementById('gem-status-chip');
+  const toggleLabel = document.getElementById('gem-toggle-label');
+  const toggleBtn   = document.getElementById('gem-toggle-btn');
+  if (chip) {
+    chip.textContent = g.enabled ? (g.using_gem ? 'using gem' : g.checking_inv ? 'checking inv' : 'active') : 'off';
+    chip.className = 'status-chip ' + (g.enabled ? 'status-chip--gem-on' : 'status-chip--gem-off');
+  }
+  if (toggleLabel) toggleLabel.textContent = g.enabled ? 'Disable' : 'Enable';
+  if (toggleBtn) {
+    toggleBtn.className = 'hdr-btn ' + (g.enabled ? 'hdr-btn--danger' : 'hdr-btn--green');
+  }
+
+  // Type buttons
+  const typeMap = { hunting: 'gem-type--hunting', empowering: 'gem-type--empowering', lucky: 'gem-type--lucky' };
+  document.querySelectorAll('.gem-type-btn').forEach(btn => {
+    const t = btn.className.match(/gem-type--(\w+)/)?.[1];
+    btn.classList.toggle('active', t === g.type);
+  });
+
+  // Rarity buttons — update IDs based on type
+  document.querySelectorAll('.gem-rarity-btn').forEach(btn => {
+    const r = btn.dataset.rarity;
+    btn.classList.toggle('active', r === g.rarity);
+    const idSpan = btn.querySelector('.rarity-id');
+    if (idSpan && GEM_IDS[g.type]) idSpan.textContent = '#' + (GEM_IDS[g.type][r] || '?');
+  });
+
+  // Status panel
+  const typeLabel = { hunting: '💎 Hunting', empowering: '🔮 Empowering', lucky: '🍀 Lucky' };
+  const rarityLabel = { common:'Common', uncommon:'Uncommon', rare:'Rare', epic:'Epic', mythical:'Mythical', legendary:'Legendary', fabled:'Fabled' };
+
+  const el = (id) => document.getElementById(id);
+  if (el('gem-active-name')) el('gem-active-name').textContent = (typeLabel[g.type] || '—') + ' · ' + (rarityLabel[g.rarity] || '—');
+  if (el('gem-active-id')) el('gem-active-id').textContent = g.gem_id ? `#${g.gem_id}` : '—';
+  if (el('gem-bonus')) el('gem-bonus').textContent = g.bonus || '—';
+
+  const hunts    = g.hunts_done || 0;
+  const dur      = g.durability || 1;
+  const pct      = Math.min(100, Math.max(0, ((dur - hunts) / dur) * 100));
+  if (el('gem-hunts')) el('gem-hunts').textContent = `${hunts} / ${dur}`;
+  if (el('gem-dur-fill')) el('gem-dur-fill').style.width = pct + '%';
+
+  // Color bar by remaining %
+  const fill = el('gem-dur-fill');
+  if (fill) {
+    if (pct > 50) fill.style.background = 'linear-gradient(90deg, #a855f7, #ec4899)';
+    else if (pct > 20) fill.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+    else fill.style.background = '#ef4444';
+  }
+
+  // Run status
+  let runStatus = '—';
+  if (g.using_gem)    runStatus = '⚡ Using gem...';
+  else if (g.checking_inv) runStatus = '📦 Checking inv...';
+  else if (!g.enabled) runStatus = '❌ Disabled';
+  else if (g.gem_expired) runStatus = '🔄 Expired — will re-use';
+  else if (g.active_id) runStatus = '✅ Gem active';
+  else runStatus = '⏳ Waiting for hunt...';
+  if (el('gem-run-status')) el('gem-run-status').textContent = runStatus;
+
+  // Last used
+  if (el('gem-last-used')) {
+    if (g.last_used && g.last_used > 0) {
+      const d = new Date(g.last_used * 1000);
+      el('gem-last-used').textContent = d.toLocaleTimeString();
+    } else {
+      el('gem-last-used').textContent = '—';
+    }
+  }
+
+  // Inv toggle
+  const invToggle = document.getElementById('gem-inv-toggle');
+  if (invToggle) invToggle.classList.toggle('on', !!g.check_inv);
+}
+
+// ── Control functions (called from HTML onclick) ──
+window.toggleGem = () => socket.emit('gem_toggle');
+
+window.setGemType = (type) => {
+  socket.emit('gem_set_type', type);
+  // Optimistic UI update
+  document.querySelectorAll('.gem-type-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.className.includes('gem-type--' + type));
+  });
+};
+
+window.setGemRarity = (rarity) => {
+  socket.emit('gem_set_rarity', rarity);
+  document.querySelectorAll('.gem-rarity-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.rarity === rarity);
+  });
+};
+
+window.toggleGemCheckInv = () => {
+  const on = document.getElementById('gem-inv-toggle')?.classList.contains('on');
+  socket.emit('gem_set_check_inv', !on);
+};
+
+window.gemUseNow = () => {
+  socket.emit('gem_use_now');
+  pushLog('info', '💎 Manual gem use triggered');
+};
+
+window.gemCheckInv = () => {
+  socket.emit('gem_check_inv');
+  pushLog('info', '📦 Checking owo inventory for gems...');
+};
+
+// ── Handle snapshot gem data (from 'update' event) ──
+const _origHandleUpdate = typeof handleSnapshot === 'function' ? handleSnapshot : null;
+socket.on('update', (snap) => {
+  if (snap && snap.gem) renderGemPanel(snap.gem);
+});
