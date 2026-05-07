@@ -212,6 +212,182 @@
       </div>
     </div>
 
+    <!-- AUTO GEM CARD -->
+    <div class="card card--full" id="gem-card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <i data-lucide="gem" class="w-4 h-4" style="color:#a855f7"></i>
+          <span class="card-eyebrow">Auto Gem</span>
+          <span id="gem-status-chip" class="status-chip status-chip--waiting">off</span>
+        </div>
+        <div class="card-header-actions">
+          <button id="gem-toggle-btn" onclick="toggleGem()" class="hdr-btn hdr-btn--green">
+            <i data-lucide="power" class="w-3 h-3"></i> <span id="gem-toggle-label">Enable</span>
+          </button>
+          <button onclick="gemCheckInv()" class="hdr-btn" title="Check owo inventory">
+            <i data-lucide="package-search" class="w-3 h-3"></i> Check Inv
+          </button>
+          <button onclick="gemUseNow()" class="hdr-btn hdr-btn--primary" title="Force use gem now">
+            <i data-lucide="zap" class="w-3 h-3"></i> Use Now
+          </button>
+        </div>
+      </div>
+
+      <div class="gem-body">
+        <!-- Left: controls -->
+        <div class="gem-controls">
+          <!-- Gem Type -->
+          <div class="gem-control-row">
+            <div class="gem-control-label">Type</div>
+            <div class="gem-type-btns" id="gem-type-btns">
+              <button class="gem-type-btn gem-type--hunting active" onclick="setGemType('hunting')">
+                💎 Hunting
+              </button>
+              <button class="gem-type-btn gem-type--empowering" onclick="setGemType('empowering')">
+                🔮 Empowering
+              </button>
+              <button class="gem-type-btn gem-type--lucky" onclick="setGemType('lucky')">
+                🍀 Lucky
+              </button>
+            </div>
+          </div>
+
+          <!-- Rarity -->
+          <div class="gem-control-row">
+            <div class="gem-control-label">Rarity</div>
+            <div class="gem-rarity-grid" id="gem-rarity-grid">
+              <button class="gem-rarity-btn active" data-rarity="common" onclick="setGemRarity('common')">
+                <span class="rarity-dot" style="background:#9ca3af"></span> Common
+                <span class="rarity-id">#51</span>
+              </button>
+              <button class="gem-rarity-btn" data-rarity="uncommon" onclick="setGemRarity('uncommon')">
+                <span class="rarity-dot" style="background:#22d3ee"></span> Uncommon
+                <span class="rarity-id">#52</span>
+              </button>
+              <button class="gem-rarity-btn" data-rarity="rare" onclick="setGemRarity('rare')">
+                <span class="rarity-dot" style="background:#eab308"></span> Rare
+                <span class="rarity-id">#53</span>
+              </button>
+              <button class="gem-rarity-btn" data-rarity="epic" onclick="setGemRarity('epic')">
+                <span class="rarity-dot" style="background:#6366f1"></span> Epic
+                <span class="rarity-id">#54</span>
+              </button>
+              <button class="gem-rarity-btn" data-rarity="mythical" onclick="setGemRarity('mythical')">
+                <span class="rarity-dot" style="background:#a855f7"></span> Mythical
+                <span class="rarity-id">#55</span>
+              </button>
+              <button class="gem-rarity-btn" data-rarity="legendary" onclick="setGemRarity('legendary')">
+                <span class="rarity-dot" style="background:#f59e0b"></span> Legendary
+                <span class="rarity-id">#56</span>
+              </button>
+              <button class="gem-rarity-btn" data-rarity="fabled" onclick="setGemRarity('fabled')">
+                <span class="rarity-dot" style="background:#e0f2fe"></span> Fabled
+                <span class="rarity-id">#57</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Options -->
+          <div class="gem-control-row">
+            <div class="gem-control-label">Options</div>
+            <label class="gem-option-row" onclick="toggleGemCheckInv()">
+              <span class="gem-opt-toggle" id="gem-inv-toggle">
+                <span class="gem-opt-toggle-knob"></span>
+              </span>
+              <span class="gem-opt-label">Check inventory before use</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Right: status panel -->
+        <div class="gem-status-panel">
+          <div class="gem-stat-row">
+            <div class="gem-stat-label">Active Gem</div>
+            <div class="gem-stat-val" id="gem-active-name">—</div>
+          </div>
+          <div class="gem-stat-row">
+            <div class="gem-stat-label">Gem ID</div>
+            <div class="gem-stat-val" id="gem-active-id">—</div>
+          </div>
+          <div class="gem-stat-row">
+            <div class="gem-stat-label">Bonus</div>
+            <div class="gem-stat-val text-primary" id="gem-bonus">—</div>
+          </div>
+          <div class="gem-stat-row">
+            <div class="gem-stat-label">Hunts done</div>
+            <div class="gem-stat-val" id="gem-hunts">0 / 0</div>
+          </div>
+
+          <!-- Durability bar -->
+          <div class="gem-dur-label">Durability</div>
+          <div class="gem-dur-track">
+            <div class="gem-dur-fill" id="gem-dur-fill" style="width:100%"></div>
+          </div>
+          <div class="gem-stat-row" style="margin-top:6px">
+            <div class="gem-stat-label">Status</div>
+            <div class="gem-stat-val" id="gem-run-status">—</div>
+          </div>
+          <div class="gem-stat-row">
+            <div class="gem-stat-label">Last used</div>
+            <div class="gem-stat-val" id="gem-last-used">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gem Chart Reference -->
+      <details class="gem-chart-details">
+        <summary class="gem-chart-summary">📊 Gem Chart Reference</summary>
+        <div class="gem-chart-wrap">
+          <div class="gem-chart-section">
+            <div class="gem-chart-title" style="color:#60a5fa">💎 Hunting Gems</div>
+            <table class="gem-table">
+              <thead><tr><th>Rarity</th><th>ID</th><th>Chance</th><th>Bonus</th><th>Hunts</th><th>Total Animals</th></tr></thead>
+              <tbody>
+                <tr><td><span class="rarity-dot" style="background:#9ca3af"></span>Common</td><td>#51</td><td>22%</td><td>+1 Animals</td><td>25</td><td>50</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#22d3ee"></span>Uncommon</td><td>#52</td><td>22%</td><td>+3 Animals</td><td>25</td><td>100</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#eab308"></span>Rare</td><td>#53</td><td>20%</td><td>+4 Animals</td><td>50</td><td>250</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#6366f1"></span>Epic</td><td>#54</td><td>20%</td><td>+5 Animals</td><td>75</td><td>450</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#a855f7"></span>Mythical</td><td>#55</td><td>10%</td><td>+6 Animals</td><td>75</td><td>525</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#f59e0b"></span>Legendary</td><td>#56</td><td>5%</td><td>+7 Animals</td><td>100</td><td>800</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#e0f2fe"></span>Fabled</td><td>#57</td><td>1%</td><td>+9 Animals</td><td>100</td><td>1000</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="gem-chart-section">
+            <div class="gem-chart-title" style="color:#c084fc">🔮 Empowering Gems</div>
+            <table class="gem-table">
+              <thead><tr><th>Rarity</th><th>ID</th><th>Chance</th><th>Bonus</th><th>Animals*</th></tr></thead>
+              <tbody>
+                <tr><td><span class="rarity-dot" style="background:#9ca3af"></span>Common</td><td>#65</td><td>22%</td><td>x2 per hunt</td><td>50</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#22d3ee"></span>Uncommon</td><td>#66</td><td>22%</td><td>x2 per hunt</td><td>100</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#eab308"></span>Rare</td><td>#67</td><td>20%</td><td>x2 per hunt</td><td>250</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#6366f1"></span>Epic</td><td>#68</td><td>20%</td><td>x2 per hunt</td><td>450</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#a855f7"></span>Mythical</td><td>#69</td><td>10%</td><td>x2 per hunt</td><td>525</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#f59e0b"></span>Legendary</td><td>#70</td><td>5%</td><td>x2 per hunt</td><td>800</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#e0f2fe"></span>Fabled</td><td>#71</td><td>1%</td><td>x2 per hunt</td><td>1000</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="gem-chart-section">
+            <div class="gem-chart-title" style="color:#4ade80">🍀 Lucky Gems</div>
+            <table class="gem-table">
+              <thead><tr><th>Rarity</th><th>ID</th><th>Chance</th><th>Bonus</th><th>Animals</th></tr></thead>
+              <tbody>
+                <tr><td><span class="rarity-dot" style="background:#9ca3af"></span>Common</td><td>#72</td><td>22%</td><td>+1.0x chance</td><td>50</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#22d3ee"></span>Uncommon</td><td>#73</td><td>22%</td><td>+2.0x chance</td><td>100</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#eab308"></span>Rare</td><td>#74</td><td>20%</td><td>+3.0x chance</td><td>250</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#6366f1"></span>Epic</td><td>#75</td><td>20%</td><td>+4.0x chance</td><td>450</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#a855f7"></span>Mythical</td><td>#76</td><td>10%</td><td>+5.0x chance</td><td>525</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#f59e0b"></span>Legendary</td><td>#77</td><td>5%</td><td>+6.0x chance</td><td>800</td></tr>
+                <tr><td><span class="rarity-dot" style="background:#e0f2fe"></span>Fabled</td><td>#78</td><td>1%</td><td>+7.0x chance</td><td>1000</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="gem-chart-note">* Empowering Gems: durability based on animals doubled. Lucky Gems lose durability 2x faster when stacked with Empowering.</p>
+      </details>
+    </div>
+
     <!-- DISCORD PREVIEW -->
     <div class="dc-section">
       <div class="dc-section-header">
@@ -356,5 +532,3 @@
 <script src="app.js"></script>
 </body>
 </html>
-
-
