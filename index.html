@@ -1,534 +1,371 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>owo/grinder · v4.2</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<script src="/socket.io/socket.io.js"></script>
-<link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>OwO Control Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./owo-styles.css">
 </head>
 <body>
+<div id="tooltip" class="tooltip" role="tooltip"></div>
 
-<!-- AMBIENT BACKGROUND -->
-<div class="ambient-bg" aria-hidden="true">
-  <div class="ambient-orb orb-1"></div>
-  <div class="ambient-orb orb-2"></div>
-  <div class="noise-overlay"></div>
-  <div class="grid-overlay"></div>
+<!-- ambient background -->
+<div class="bg-orbs" aria-hidden="true">
+  <span class="orb orb-1"></span>
+  <span class="orb orb-2"></span>
+  <span class="orb orb-3"></span>
+  <div class="grid-noise"></div>
 </div>
 
-<!-- TOP BAR -->
-<header class="topbar">
-  <div class="topbar-inner">
-    <div class="brand">
-      <div class="brand-icon">
-        <span>O</span>
-        <div class="brand-glow"></div>
-      </div>
-      <div class="brand-text">
-        <div class="brand-name">owo<span class="text-primary">/</span>grinder</div>
-        <div class="brand-ver">v4.2 · premium</div>
-      </div>
-    </div>
+<!-- ── Login overlay ── -->
 
-    <div class="topbar-divider"></div>
-
-    <div class="run-status">
-      <span class="status-dot-wrap">
-        <span class="pulse-ring bg-success"></span>
-        <span class="status-dot bg-success"></span>
-      </span>
-      <span class="run-label" id="run-label">Connecting...</span>
-      <span class="run-uptime">· <span id="up1">00:00:00</span></span>
-    </div>
-
-    <div class="topbar-actions">
-      <div id="socket-status" class="socket-pill">
-        <span id="socket-dot" class="h-1.5 w-1.5 rounded-full bg-warning animate-blink"></span>
-        <span id="socket-label" class="pill-label">connecting</span>
-      </div>
-      <div class="uptime-pill">
-        <span class="pill-label">uptime</span>
-        <span class="uptime-val" id="up2">00:00:00</span>
-      </div>
-      <button id="run-btn" class="run-btn">
-        <i data-lucide="square" class="w-3 h-3"></i>
-        <span id="run-btn-label">Stop</span>
-      </button>
-    </div>
+<!-- ── Mobile topbar ── -->
+<header id="mobileBar" class="mobile-bar hidden">
+  <button id="mobileMenuBtn" class="icon-btn" aria-label="Open menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  </button>
+  <div class="mb-brand">
+    <div class="logo-mark sm"><span>O</span></div>
+    <strong>OwO</strong>
+  </div>
+  <div class="mb-status">
+    <span id="mStatusDot" class="dot dot-off"></span>
+    <span id="mStatusText">Idle</span>
   </div>
 </header>
 
-<!-- MAIN LAYOUT -->
-<div class="layout">
+<!-- ── Main app ── -->
+<div id="app" class="app hidden">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
+  <!-- Mobile backdrop -->
+  <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
 
-    <!-- Active selfbot -->
-    <div class="card">
-      <div class="card-eyebrow">Active selfbot</div>
-      <div class="selfbot-row">
-        <div class="selfbot-avatar-wrap">
-          <img id="acc-avatar" src="" class="selfbot-avatar" />
-          <span id="acc-dot" class="selfbot-dot bg-success"></span>
-        </div>
-        <div class="selfbot-info">
-          <div class="selfbot-tag" id="acc-tag">—</div>
-          <div class="selfbot-status text-success" id="acc-status">● GRINDING</div>
-        </div>
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar glass">
+    <div class="brand">
+      <div class="logo-mark sm"><span>O</span></div>
+      <div class="brand-text">
+        <strong>OwO</strong>
+        <small>Control Panel</small>
       </div>
-      <div class="selfbot-stats">
-        <div class="mini-stat">
-          <div class="mini-label">Cowoncy</div>
-          <div class="mini-val" id="acc-cow">—</div>
-        </div>
-        <div class="mini-stat">
-          <div class="mini-label">Level</div>
-          <div class="mini-val" id="acc-lv">—</div>
-        </div>
-      </div>
+      <button id="sidebarCollapse" class="icon-btn sidebar-collapse" aria-label="Collapse sidebar" title="Collapse">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <button id="sidebarClose" class="icon-btn sidebar-close" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
     </div>
 
-    <!-- Actions -->
-    <div class="card">
-      <div class="card-eyebrow">Actions</div>
-      <div class="action-grid">
-        <button onclick="triggerHb()" class="action-btn">
-          <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> Huntbot
-        </button>
-        <button onclick="reboot()" class="action-btn">
-          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Reboot
-        </button>
-        <button onclick="checkCowoncy()" class="action-btn action-btn--gold col-span-2">
-          <i data-lucide="coins" class="w-3.5 h-3.5"></i> Check Cowoncy
-        </button>
+    <!-- Discord account card -->
+    <div id="userCard" class="user-card">
+      <div id="userAvatar" class="user-avatar skeleton"></div>
+      <div class="user-meta">
+        <strong id="userTag" class="skeleton-text">Loading…</strong>
+        <small id="userId" class="user-id">—</small>
       </div>
     </div>
 
-    <!-- Hunt channel -->
-    <div class="card">
-      <div class="card-eyebrow">Hunt channel</div>
-      <div class="channel-display">
-        <i data-lucide="hash" class="w-3 h-3 text-primary"></i>
-        <span class="channel-id" id="ch-id">—</span>
+    <nav class="nav">
+      <button class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-item" data-view="grinding">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3v18l7-4 7 4V3z"/></svg>
+        <span>Grinding</span>
+      </button>
+      <button class="nav-item" data-view="features">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82 2 2 0 1 1-2.83 2.83 1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0 1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33 2 2 0 1 1-2.83-2.83 1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4 1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82 2 2 0 1 1 2.83-2.83 1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0 1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33 2 2 0 1 1 2.83 2.83 1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4 1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Features</span>
+      </button>
+      <button class="nav-item" data-view="protection">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Protection</span>
+      </button>
+      <button class="nav-item" data-view="gems">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M12 21 8 9l4-6 4 6-4 12z"/></svg>
+        <span>Auto Gems</span>
+      </button>
+      <button class="nav-item" data-view="channels">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg>
+        <span>Channels</span>
+      </button>
+      <button class="nav-item" data-view="config">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+        <span>Config</span>
+      </button>
+      <button class="nav-item" data-view="logs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3zM3 11h18v4H3zM3 19h18v2H3z"/></svg>
+        <span>Live Logs</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="status-pill">
+        <span id="statusDot" class="dot dot-off"></span>
+        <span id="statusText">Idle</span>
       </div>
-      <div class="channel-input-row">
-        <input id="ch-input" placeholder="new channel id" class="channel-input" />
-        <button onclick="setChannel()" class="channel-send-btn">
-          <i data-lucide="send" class="w-3.5 h-3.5"></i>
-        </button>
-      </div>
+      <button id="logoutBtn" class="btn btn-ghost btn-sm">Sign out</button>
     </div>
-
-    <!-- Behaviour -->
-    <div class="card">
-      <div class="card-eyebrow">Behaviour</div>
-      <div class="divider-list" id="behaviour"></div>
-    </div>
-
-    <!-- Protections -->
-    <div class="card">
-      <div class="card-eyebrow">Protections</div>
-      <div class="divider-list" id="protections"></div>
-    </div>
-
   </aside>
 
-  <!-- MAIN CONTENT -->
-  <main class="main-content">
+  <!-- Main -->
+  <main class="main">
 
-    <!-- STATS GRID -->
-    <div class="stats-grid" id="stats-grid"></div>
-
-    <!-- HUNTBOT CARD -->
-    <div class="card card--full">
-      <div class="card-header">
-        <div class="card-header-left">
-          <i data-lucide="bot" class="w-4 h-4 text-primary"></i>
-          <span class="card-eyebrow">Auto Huntbot</span>
-          <span id="hb-status-chip" class="status-chip status-chip--waiting">waiting</span>
+    <!-- DASHBOARD -->
+    <section class="view active" data-view="dashboard">
+      <header class="view-header">
+        <div>
+          <h2>Dashboard</h2>
+          <p>Real-time overview of your selfbot</p>
         </div>
-        <div class="card-header-actions">
-          <button id="hb-auto-btn" onclick="toggleAuto()" class="hdr-btn hdr-btn--green">
-            <i data-lucide="shield-check" class="w-3 h-3"></i> Auto-solve
+        <div class="header-actions">
+          <button id="quickStart" class="btn btn-primary btn-glow">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <span>Start</span>
           </button>
-          <button id="hb-pause-btn" onclick="togglePause()" class="hdr-btn">
-            <i data-lucide="pause" class="w-3 h-3"></i> <span>Pause</span>
-          </button>
-          <button onclick="triggerHb()" class="hdr-btn hdr-btn--primary">
-            <i data-lucide="crosshair" class="w-3 h-3"></i> Run now
+          <button id="quickStop" class="btn btn-danger">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+            <span>Stop</span>
           </button>
         </div>
-      </div>
-      <div class="hb-body">
-        <div class="hb-main">
-          <div class="hb-timer-row">
+      </header>
+
+      <!-- Hero: Discord user + Hunt cooldown -->
+      <div class="hero-grid">
+        <div class="hero-card glass">
+          <div class="hero-label">Logged in as</div>
+          <div class="hero-user">
+            <div id="heroAvatar" class="user-avatar lg skeleton"></div>
             <div>
-              <div class="hb-timer-label" id="hb-label">Returns in</div>
-              <div class="hb-timer" id="hb-time">15:00</div>
+              <strong id="heroTag" class="skeleton-text">Loading…</strong>
+              <small id="heroId" class="user-id">—</small>
             </div>
-            <div class="hb-reward-wrap">
-              <div class="hb-timer-label">Reward</div>
-              <div class="hb-reward">+<span id="hb-reward">0</span></div>
-            </div>
-          </div>
-          <div class="progress-track">
-            <div id="hb-bar" class="progress-fill" style="width:0%"></div>
-          </div>
-          <div class="hb-meta-grid">
-            <div class="hb-meta-cell">
-              <div class="hb-meta-label">Total earned</div>
-              <div class="hb-meta-val text-primary" id="hb-earn">0</div>
-            </div>
-            <div class="hb-meta-cell">
-              <div class="hb-meta-label">Runs</div>
-              <div class="hb-meta-val" id="hb-runs">0</div>
-            </div>
-            <div class="hb-meta-cell">
-              <div class="hb-meta-label">Captchas</div>
-              <div class="hb-meta-val" id="hb-cap">0</div>
-            </div>
-          </div>
-          <div class="hb-footer-note">
-            <span id="hb-last">∞</span> · channel <span id="hb-ch">#—</span>
           </div>
         </div>
-        <div class="hb-ring-wrap">
-          <svg viewBox="0 0 120 120" class="hb-ring-svg">
-            <circle cx="60" cy="60" r="52" stroke="#1e1a1c" stroke-width="5" fill="none"/>
-            <circle id="hb-ring" cx="60" cy="60" r="52" stroke="var(--warning)" stroke-width="5" fill="none"
-              stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"
-              style="transition:stroke-dashoffset 1s linear"/>
-          </svg>
-          <div class="hb-ring-inner">
-            <i data-lucide="timer" class="w-4 h-4 text-muted"></i>
-            <div class="hb-ring-label">cycle</div>
-            <div class="hb-ring-pct" id="hb-pct">0%</div>
+
+        <div class="hero-card glass">
+          <div class="hero-label">Huntbot cooldown</div>
+          <div class="cooldown-wrap">
+            <svg class="ring" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="52" class="ring-bg"/>
+              <circle cx="60" cy="60" r="52" class="ring-fg" id="huntRing"/>
+            </svg>
+            <div class="ring-center">
+              <strong id="huntCdText">∞</strong>
+              <small>until next hunt</small>
+            </div>
+            <div class="hb-time">
+              <span class="hb-time-label">HUNTBOT TIME</span>
+              <strong id="hbTimeText">—</strong>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- AUTO GEM CARD -->
-    <div class="card card--full" id="gem-card">
-      <div class="card-header">
-        <div class="card-header-left">
-          <i data-lucide="gem" class="w-4 h-4" style="color:#a855f7"></i>
-          <span class="card-eyebrow">Auto Gem</span>
-          <span id="gem-status-chip" class="status-chip status-chip--waiting">off</span>
-        </div>
-        <div class="card-header-actions">
-          <button id="gem-toggle-btn" onclick="toggleGem()" class="hdr-btn hdr-btn--green">
-            <i data-lucide="power" class="w-3 h-3"></i> <span id="gem-toggle-label">Enable</span>
-          </button>
-          <button onclick="gemCheckInv()" class="hdr-btn" title="Check owo inventory">
-            <i data-lucide="package-search" class="w-3 h-3"></i> Check Inv
-          </button>
-          <button onclick="gemUseNow()" class="hdr-btn hdr-btn--primary" title="Force use gem now">
-            <i data-lucide="zap" class="w-3 h-3"></i> Use Now
-          </button>
-        </div>
+      <div class="stat-grid">
+        <div class="stat glass card-hover"><div class="stat-icon i-red">🎯</div><div><span class="stat-label">Hunts</span><strong id="sHunts">0</strong></div></div>
+        <div class="stat glass card-hover"><div class="stat-icon i-orange">⚔️</div><div><span class="stat-label">Battles</span><strong id="sBattles">0</strong></div></div>
+        <div class="stat glass card-hover"><div class="stat-icon i-pink">🙏</div><div><span class="stat-label">Prays</span><strong id="sPrays">0</strong></div></div>
+        <div class="stat glass card-hover"><div class="stat-icon i-rose">📅</div><div><span class="stat-label">Dailies</span><strong id="sDailies">0</strong></div></div>
+        <div class="stat glass card-hover"><div class="stat-icon i-amber">💎</div><div><span class="stat-label">Gems used</span><strong id="sGems">0</strong></div></div>
+        <div class="stat glass card-hover"><div class="stat-icon i-amber">⏱</div><div><span class="stat-label">Uptime</span><strong id="sUptime">0s</strong></div></div>
+        <div class="stat glass card-hover"><div class="stat-icon i-crimson"><img src='/huntbot.gif' alt='HB' class='hb-ico'></div><div><span class="stat-label">Huntbot in</span><strong id="sHbIn">∞</strong></div></div>
       </div>
 
-      <div class="gem-body">
-        <!-- Left: controls -->
-        <div class="gem-controls">
-          <!-- Gem Type -->
-          <div class="gem-control-row">
-            <div class="gem-control-label">Type</div>
-            <div class="gem-type-btns" id="gem-type-btns">
-              <button class="gem-type-btn gem-type--hunting active" onclick="setGemType('hunting')">
-                💎 Hunting
-              </button>
-              <button class="gem-type-btn gem-type--empowering" onclick="setGemType('empowering')">
-                🔮 Empowering
-              </button>
-              <button class="gem-type-btn gem-type--lucky" onclick="setGemType('lucky')">
-                🍀 Lucky
-              </button>
+      <div class="panel glass hb-panel">
+        <div class="hb-head">
+          <div class="hb-title">
+            <img src="/huntbot.gif" alt="" class="hb-ico hb-ico-lg">
+            <div>
+              <h3>Auto Huntbot <span class="auto-solve-tag" title="Captchas are auto-solved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg>AUTO-SOLVE</span></h3>
+              <small>Auto-sends <code>owo hb</code> and watches for captchas</small>
             </div>
           </div>
-
-          <!-- Rarity -->
-          <div class="gem-control-row">
-            <div class="gem-control-label">Rarity</div>
-            <div class="gem-rarity-grid" id="gem-rarity-grid">
-              <button class="gem-rarity-btn active" data-rarity="common" onclick="setGemRarity('common')">
-                <span class="rarity-dot" style="background:#9ca3af"></span> Common
-                <span class="rarity-id">#51</span>
-              </button>
-              <button class="gem-rarity-btn" data-rarity="uncommon" onclick="setGemRarity('uncommon')">
-                <span class="rarity-dot" style="background:#22d3ee"></span> Uncommon
-                <span class="rarity-id">#52</span>
-              </button>
-              <button class="gem-rarity-btn" data-rarity="rare" onclick="setGemRarity('rare')">
-                <span class="rarity-dot" style="background:#eab308"></span> Rare
-                <span class="rarity-id">#53</span>
-              </button>
-              <button class="gem-rarity-btn" data-rarity="epic" onclick="setGemRarity('epic')">
-                <span class="rarity-dot" style="background:#6366f1"></span> Epic
-                <span class="rarity-id">#54</span>
-              </button>
-              <button class="gem-rarity-btn" data-rarity="mythical" onclick="setGemRarity('mythical')">
-                <span class="rarity-dot" style="background:#a855f7"></span> Mythical
-                <span class="rarity-id">#55</span>
-              </button>
-              <button class="gem-rarity-btn" data-rarity="legendary" onclick="setGemRarity('legendary')">
-                <span class="rarity-dot" style="background:#f59e0b"></span> Legendary
-                <span class="rarity-id">#56</span>
-              </button>
-              <button class="gem-rarity-btn" data-rarity="fabled" onclick="setGemRarity('fabled')">
-                <span class="rarity-dot" style="background:#e0f2fe"></span> Fabled
-                <span class="rarity-id">#57</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Options -->
-          <div class="gem-control-row">
-            <div class="gem-control-label">Options</div>
-            <label class="gem-option-row" onclick="toggleGemCheckInv()">
-              <span class="gem-opt-toggle" id="gem-inv-toggle">
-                <span class="gem-opt-toggle-knob"></span>
-              </span>
-              <span class="gem-opt-label">Check inventory before use</span>
+          <div class="hb-actions">
+            <button id="hbRunNow" class="btn btn-ghost btn-sm" title="Force a fresh huntbot check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" width="14" height="14"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+              <span>Run HB</span>
+            </button>
+            <label class="toggle hb-toggle" title="Enable Auto Huntbot">
+              <input type="checkbox" id="hbEnabled">
+              <span class="track"><span class="knob"></span></span>
             </label>
           </div>
         </div>
-
-        <!-- Right: status panel -->
-        <div class="gem-status-panel">
-          <div class="gem-stat-row">
-            <div class="gem-stat-label">Active Gem</div>
-            <div class="gem-stat-val" id="gem-active-name">—</div>
+        <div class="hb-grid">
+          <div class="hb-stat">
+            <span class="hb-stat-label">Huntbot in</span>
+            <strong id="hbInVal">∞</strong>
           </div>
-          <div class="gem-stat-row">
-            <div class="gem-stat-label">Gem ID</div>
-            <div class="gem-stat-val" id="gem-active-id">—</div>
+          <div class="hb-stat">
+            <span class="hb-stat-label">Returns at</span>
+            <strong id="hbAtVal">—</strong>
           </div>
-          <div class="gem-stat-row">
-            <div class="gem-stat-label">Bonus</div>
-            <div class="gem-stat-val text-primary" id="gem-bonus">—</div>
-          </div>
-          <div class="gem-stat-row">
-            <div class="gem-stat-label">Hunts done</div>
-            <div class="gem-stat-val" id="gem-hunts">0 / 0</div>
-          </div>
-
-          <!-- Durability bar -->
-          <div class="gem-dur-label">Durability</div>
-          <div class="gem-dur-track">
-            <div class="gem-dur-fill" id="gem-dur-fill" style="width:100%"></div>
-          </div>
-          <div class="gem-stat-row" style="margin-top:6px">
-            <div class="gem-stat-label">Status</div>
-            <div class="gem-stat-val" id="gem-run-status">—</div>
-          </div>
-          <div class="gem-stat-row">
-            <div class="gem-stat-label">Last used</div>
-            <div class="gem-stat-val" id="gem-last-used">—</div>
+          <div class="hb-stat">
+            <span class="hb-stat-label">Amount (auto)</span>
+            <strong id="hbAmtVal">—</strong>
           </div>
         </div>
+        <div id="hbDisabledNote" class="hb-note hidden">Auto Huntbot is off — bot won't be dispatched, but the live timer above keeps tracking your last huntbot.</div>
       </div>
 
-      <!-- Gem Chart Reference -->
-      <details class="gem-chart-details">
-        <summary class="gem-chart-summary">📊 Gem Chart Reference</summary>
-        <div class="gem-chart-wrap">
-          <div class="gem-chart-section">
-            <div class="gem-chart-title" style="color:#60a5fa">💎 Hunting Gems</div>
-            <table class="gem-table">
-              <thead><tr><th>Rarity</th><th>ID</th><th>Chance</th><th>Bonus</th><th>Hunts</th><th>Total Animals</th></tr></thead>
-              <tbody>
-                <tr><td><span class="rarity-dot" style="background:#9ca3af"></span>Common</td><td>#51</td><td>22%</td><td>+1 Animals</td><td>25</td><td>50</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#22d3ee"></span>Uncommon</td><td>#52</td><td>22%</td><td>+3 Animals</td><td>25</td><td>100</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#eab308"></span>Rare</td><td>#53</td><td>20%</td><td>+4 Animals</td><td>50</td><td>250</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#6366f1"></span>Epic</td><td>#54</td><td>20%</td><td>+5 Animals</td><td>75</td><td>450</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#a855f7"></span>Mythical</td><td>#55</td><td>10%</td><td>+6 Animals</td><td>75</td><td>525</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#f59e0b"></span>Legendary</td><td>#56</td><td>5%</td><td>+7 Animals</td><td>100</td><td>800</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#e0f2fe"></span>Fabled</td><td>#57</td><td>1%</td><td>+9 Animals</td><td>100</td><td>1000</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="gem-chart-section">
-            <div class="gem-chart-title" style="color:#c084fc">🔮 Empowering Gems</div>
-            <table class="gem-table">
-              <thead><tr><th>Rarity</th><th>ID</th><th>Chance</th><th>Bonus</th><th>Animals*</th></tr></thead>
-              <tbody>
-                <tr><td><span class="rarity-dot" style="background:#9ca3af"></span>Common</td><td>#65</td><td>22%</td><td>x2 per hunt</td><td>50</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#22d3ee"></span>Uncommon</td><td>#66</td><td>22%</td><td>x2 per hunt</td><td>100</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#eab308"></span>Rare</td><td>#67</td><td>20%</td><td>x2 per hunt</td><td>250</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#6366f1"></span>Epic</td><td>#68</td><td>20%</td><td>x2 per hunt</td><td>450</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#a855f7"></span>Mythical</td><td>#69</td><td>10%</td><td>x2 per hunt</td><td>525</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#f59e0b"></span>Legendary</td><td>#70</td><td>5%</td><td>x2 per hunt</td><td>800</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#e0f2fe"></span>Fabled</td><td>#71</td><td>1%</td><td>x2 per hunt</td><td>1000</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="gem-chart-section">
-            <div class="gem-chart-title" style="color:#4ade80">🍀 Lucky Gems</div>
-            <table class="gem-table">
-              <thead><tr><th>Rarity</th><th>ID</th><th>Chance</th><th>Bonus</th><th>Animals</th></tr></thead>
-              <tbody>
-                <tr><td><span class="rarity-dot" style="background:#9ca3af"></span>Common</td><td>#72</td><td>22%</td><td>+1.0x chance</td><td>50</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#22d3ee"></span>Uncommon</td><td>#73</td><td>22%</td><td>+2.0x chance</td><td>100</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#eab308"></span>Rare</td><td>#74</td><td>20%</td><td>+3.0x chance</td><td>250</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#6366f1"></span>Epic</td><td>#75</td><td>20%</td><td>+4.0x chance</td><td>450</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#a855f7"></span>Mythical</td><td>#76</td><td>10%</td><td>+5.0x chance</td><td>525</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#f59e0b"></span>Legendary</td><td>#77</td><td>5%</td><td>+6.0x chance</td><td>800</td></tr>
-                <tr><td><span class="rarity-dot" style="background:#e0f2fe"></span>Fabled</td><td>#78</td><td>1%</td><td>+7.0x chance</td><td>1000</td></tr>
-              </tbody>
-            </table>
+      <div class="panel glass">
+        <h3>Recent activity</h3>
+        <div id="recentLogs" class="recent-logs"></div>
+      </div>
+    </section>
+
+    <!-- GRINDING -->
+    <section class="view" data-view="grinding">
+      <header class="view-header"><div><h2>Grinding</h2><p>Start, stop and watch the loop</p></div></header>
+      <div class="panel glass grind-controls">
+        <div class="grind-status">
+          <span id="grindStatusDot" class="dot dot-off"></span>
+          <div>
+            <strong id="grindStatusText">Idle</strong>
+            <small>Bot is currently not running</small>
           </div>
         </div>
-        <p class="gem-chart-note">* Empowering Gems: durability based on animals doubled. Lucky Gems lose durability 2x faster when stacked with Empowering.</p>
-      </details>
-    </div>
-
-    <!-- DISCORD PREVIEW -->
-    <div class="dc-section">
-      <div class="dc-section-header">
-        <span class="card-eyebrow">Discord live preview</span>
-        <span class="dc-ch-tag" id="dc-ch">#—</span>
-        <span id="dc-live-indicator" class="dc-live">
-          <span class="relative flex h-1.5 w-1.5"><span class="pulse-ring bg-success"></span><span class="relative h-1.5 w-1.5 rounded-full bg-success"></span></span>
-          live
-        </span>
-        <div class="ml-auto">
-          <button id="dc-preview-toggle" onclick="toggleDiscordPreview()" class="hdr-btn hdr-btn--green">
-            <i data-lucide="eye" class="w-3 h-3"></i> <span id="dc-preview-label">Hide</span>
-          </button>
+        <div class="grind-actions">
+          <button id="bigStart" class="btn btn-grind btn-grind-start">Start grinding</button>
+          <button id="bigStop"  class="btn btn-grind btn-grind-stop">Stop</button>
         </div>
       </div>
+      <div class="panel glass"><h3>Active loops</h3><div id="activeLoops" class="loop-grid"></div></div>
 
-      <div id="dc-preview-body" class="dc-window">
-        <!-- Channel bar -->
-        <div class="dc-channel-bar">
-          <i data-lucide="hash" class="w-4 h-4" style="color:#80848e"></i>
-          <span class="dc-channel-name">owo-game</span>
-          <i data-lucide="chevron-right" class="w-4 h-4" style="color:#80848e"></i>
-          <div class="dc-online-pill">
-            <span class="h-2 w-2 rounded-full" style="background:#23a55a"></span>
-            <span class="dc-online-count dc-mute" id="header-online-count">0 online</span>
+      <div class="panel glass discord-panel">
+        <div class="dc-head">
+          <div class="dc-channel">
+            <span class="dc-hash">#</span>
+            <strong id="dcChannelName">grinding-preview</strong>
+            <span class="dc-live"><span class="dc-live-dot"></span> LIVE</span>
+            <label class="toggle dc-toggle" title="Enable live preview">
+              <input type="checkbox" id="dcEnabled" checked>
+              <span class="track"><span class="knob"></span></span>
+            </label>
           </div>
-          <div class="dc-icons">
-            <i data-lucide="pin" class="w-4 h-4"></i>
-            <button id="members-toggle-btn" onclick="toggleMembersPanel()" class="dc-icon-btn" title="Toggle Members List">
-              <i data-lucide="users" class="w-4 h-4"></i>
-            </button>
-            <div class="dc-search-pill">
-              <i data-lucide="search" class="w-3.5 h-3.5"></i>
-              <input readonly placeholder="Search" class="dc-search-input"/>
-            </div>
-            <i data-lucide="inbox" class="w-4 h-4"></i>
+          <small class="dc-sub">Live mirror of what the bot is sending in your channel</small>
+        </div>
+        <div id="dcChat" class="dc-chat"></div>
+        <div id="dcEmpty" class="dc-empty hidden">
+          <div class="dc-empty-icon">#</div>
+          <h4>Please add your channel</h4>
+          <p>Add a Discord channel ID below to start mirroring grinding messages here.</p>
+          <div class="dc-empty-form">
+            <input id="dcEmptyInput" type="text" placeholder="Channel ID (digits only)" inputmode="numeric">
+            <button id="dcEmptyAdd" class="btn btn-primary">Add channel</button>
           </div>
         </div>
+        <div id="dcDisabled" class="dc-disabled hidden">Live preview is off. Toggle it on to mirror commands.</div>
+      </div>
+    </section>
 
-        <div class="dc-main-area">
-          <!-- Messages -->
-          <div id="dc-stream" class="dc-messages"></div>
-          <!-- Members panel -->
-          <div id="members-panel" class="dc-members hidden">
-            <div class="dc-members-section-label">Online — <span id="members-count-online">0</span></div>
-            <div id="members-list-online" class="dc-members-list"></div>
-            <div class="dc-members-section-label">Offline — <span id="members-count-offline">0</span></div>
-            <div id="members-list-offline" class="dc-members-list dc-members-list--flex"></div>
+    <!-- FEATURES -->
+    <section class="view" data-view="features">
+      <header class="view-header"><div><h2>Features</h2><p>Toggle commands on the fly</p></div></header>
+      <div id="featureToggles" class="toggle-grid"></div>
+    </section>
+
+    <!-- PROTECTION -->
+    <section class="view" data-view="protection">
+      <header class="view-header"><div><h2>Protection</h2><p>Anti-ban and safety guards</p></div></header>
+      <div id="protectionToggles" class="toggle-grid"></div>
+    </section>
+
+    <!-- AUTO GEMS -->
+    <section class="view" data-view="gems">
+      <header class="view-header">
+        <div><h2>Auto Gems</h2><p>Pick a gem and the bot will <code>owo use</code> it for you</p></div>
+        <div class="gem-head-actions">
+          <span class="gem-status-tag" id="gemStatusTag"><span class="dot dot-off"></span> <strong id="gemStatusLabel">OFF</strong></span>
+          <button id="gemEnableBtn" class="btn btn-ghost btn-sm">Enable</button>
+          <button id="gemCheckBtn"  class="btn btn-ghost btn-sm">Check inv</button>
+          <button id="gemUseBtn"    class="btn btn-grind btn-grind-start btn-sm">Use now</button>
+        </div>
+      </header>
+
+      <div class="gem-layout">
+        <div class="panel glass gem-picker">
+          <div class="gem-section">
+            <div class="gem-section-label">TYPE</div>
+            <div class="gem-type-row" id="gemTypeRow"></div>
           </div>
+          <div class="gem-section">
+            <div class="gem-section-label">RARITY</div>
+            <div class="gem-rarity-row" id="gemRarityRow"></div>
+          </div>
+          <div class="gem-section">
+            <div class="gem-section-label">OPTIONS</div>
+            <label class="gem-opt">
+              <input type="checkbox" id="gemCheckInv">
+              <span>Check inventory before use</span>
+            </label>
+          </div>
+          
         </div>
 
-        <!-- Input -->
-        <div class="dc-input-area">
-          <div class="dc-input-box">
-            <button class="dc-plus-btn">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-            </button>
-            <input
-              id="dc-input"
-              type="text"
-              placeholder="Message #owo-game"
-              maxlength="2000"
-              autocomplete="off"
-              class="dc-textinput"
-              onkeydown="if(event.key==='Enter')sendDcMessage()"
-            />
-            <span id="dc-charcount" class="dc-charcount"></span>
-            <button onclick="sendDcMessage()" id="dc-send-btn" class="dc-send-btn" title="Send message to Discord">
-              <i data-lucide="send" class="w-3.5 h-3.5"></i>
-            </button>
+        <aside class="panel glass gem-active">
+          <div class="gem-active-row"><span>Active Gem</span><strong id="gemActive">—</strong></div>
+          <div class="gem-active-row"><span>Gem ID</span><strong id="gemActiveId" class="mono">—</strong></div>
+          <div class="gem-active-row"><span>Bonus</span><strong id="gemActiveBonus">—</strong></div>
+          <div class="gem-active-row"><span>Hunts done</span><strong id="gemHunts" class="mono">0 / 0</strong></div>
+          <div class="gem-dura-wrap">
+            <span>Durability</span>
+            <div class="gem-dura"><span id="gemDuraBar"></span></div>
           </div>
-          <div class="dc-input-meta">
-            <span>Sending as <span id="dc-as" class="dc-as-name">—</span> in <span id="dc-ch-name" class="dc-as-name">#owo-game</span></span>
-            <span id="dc-send-status" class="dc-send-status"></span>
-          </div>
+          <div class="gem-active-row"><span>Status</span><strong id="gemActiveStatus">Idle</strong></div>
+          <div class="gem-active-row"><span>Last used</span><strong id="gemLastUsed" class="mono">—</strong></div>
+        </aside>
+      </div>
+    </section>
+    <section class="view" data-view="channels">
+      <header class="view-header"><div><h2>Channels</h2><p>Discord channel IDs the bot will use</p></div></header>
+      <div class="panel glass">
+        <div id="channelList" class="chip-list"></div>
+        <div class="row gap-sm">
+          <input id="newChannel" type="text" placeholder="Channel ID (digits only)">
+          <button id="addChannel" class="btn btn-primary">Add</button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- ACCOUNTS -->
-    <div class="card card--full">
-      <div class="card-header">
-        <div class="card-header-left">
-          <span class="card-eyebrow">Accounts</span>
-          <span class="count-badge" id="acc-count">0</span>
+    <!-- CONFIG -->
+    <section class="view" data-view="config">
+      <header class="view-header"><div><h2>Config</h2><p>Intervals, prefix and update mode</p></div></header>
+      <div class="panel glass">
+        <div class="form-grid">
+          <label class="field"><span>Prefix</span><input id="cfgPrefix" type="text"></label>
+          <label class="field"><span>Hunt interval (ms)</span><input id="cfgHunt" type="number"></label>
+          <label class="field"><span>Battle interval (ms)</span><input id="cfgBattle" type="number"></label>
+          <label class="field"><span>Pray interval (ms)</span><input id="cfgPray" type="number"></label>
+          <label class="field"><span>Daily interval (ms)</span><input id="cfgDaily" type="number"></label>
+          <label class="field"><span>Auto Gem interval (ms)</span><input id="cfgGem" type="number"></label>
+          <label class="field"><span>Update mode</span>
+            <select id="cfgMode">
+              <option value="auto">Auto (sync from GitHub)</option>
+              <option value="manual">Manual (local files only)</option>
+            </select>
+          </label>
         </div>
-        <div class="card-header-actions">
-          <button onclick="toggleTokenEditor()" class="hdr-btn">
-            <i data-lucide="key" class="w-3 h-3"></i> Edit Tokens
-          </button>
-          <button onclick="refreshAccountsBtn()" class="hdr-btn">
-            <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh
-          </button>
-        </div>
+        <button id="saveConfig" class="btn btn-primary btn-glow">Save changes</button>
       </div>
-      <div class="divider-list" id="acc-list"></div>
+    </section>
 
-      <!-- Token editor -->
-      <div id="token-editor" class="token-editor hidden">
-        <div class="token-editor-header">
-          <span class="card-eyebrow">Token Editor</span>
-          <span class="token-editor-hint">Changes saved immediately · Restart to apply</span>
-        </div>
-        <div id="token-list" class="flex flex-col gap-2 mb-3"></div>
-        <div class="token-add-box">
-          <div class="token-add-label">➕ Add New Token</div>
-          <div class="flex gap-2">
-            <input id="new-token-label" placeholder="Label (e.g. alt1)" class="token-field w-24" />
-            <input id="new-token-value" placeholder="Discord token" type="password" class="token-field flex-1" />
-            <button onclick="addNewToken()" class="hdr-btn hdr-btn--primary">
-              <i data-lucide="plus" class="w-3 h-3"></i> Add
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CONSOLE -->
-    <div class="card card--full">
-      <div class="card-header console-header">
-        <i data-lucide="terminal" class="w-3.5 h-3.5 text-primary"></i>
-        <span class="card-eyebrow">Console</span>
-        <span class="count-badge" id="log-count">0</span>
-        <div class="log-filter" id="log-filter">
-          <i data-lucide="filter" class="w-3 h-3 text-muted"></i>
-        </div>
-      </div>
-      <div id="log-stream" class="log-stream"></div>
-    </div>
+    <!-- LOGS -->
+    <section class="view" data-view="logs">
+      <header class="view-header"><div><h2>Live logs</h2><p>Streaming from the bot in real time</p></div>
+        <button id="clearLogs" class="btn btn-ghost">Clear view</button>
+      </header>
+      <div id="logBox" class="log-box glass"></div>
+    </section>
 
   </main>
 </div>
 
-<!-- TOAST -->
-<div id="toast" class="toast hidden">
-  <div class="toast-inner">
-    <span class="toast-dot"></span>
-    <span id="toast-msg"></span>
-  </div>
-</div>
-
-<script src="app.js"></script>
+<script src="./owo-dashboard.js"></script>
 </body>
 </html>
